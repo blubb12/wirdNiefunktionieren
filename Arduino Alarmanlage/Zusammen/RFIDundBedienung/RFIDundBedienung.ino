@@ -19,10 +19,14 @@ decode_results results;
 MFRC522 mfrc522(SS_PIN, RST_PIN); 
 const byte unsereUID[4] = {134,49,120,245}; //UID der Karte in Dezimal
 
-//der Pin zum "öffnen"
-char pin[2][14]= {
- "blah",
- "hmm"
+
+int pos = 0;
+//der Pin zum "öffnen" Fernbedienung entspricht 1234
+long int pin[4]= {
+ 16753245,
+ 16736925,
+ 16769565,
+ 16720605
  };
 //strcpy(pin[0], "blah");
 //strcpy(pin[1], "hmm");
@@ -53,15 +57,26 @@ void setup(){
 
 void loop(){
      
-  //Fernbedienung
-  if (irrecv.decode(&results)){
-        Serial.println(results.value);
-        Serial.println(results.value, HEX);
-        irrecv.resume();
-  }
-  int j;
- // for(j = 0; j < pin.length; j++){
-    
+        //Fernbedienung
+        if (irrecv.decode(&results)){
+              Serial.println(results.value);
+              Serial.println(results.value, HEX);
+              irrecv.resume();
+        }
+        int j;
+        if(results.value == pin[pos]){
+             pos++;
+          }
+        
+        if(pos == 4){
+          setLocked (true);
+          pos=0;
+          delay(7000);
+      
+        }
+        else{
+          setLocked(false);
+        }
   //}
   
 
@@ -80,19 +95,30 @@ void loop(){
 
      
        //Vergleicht gelesene Karte mit eingespeicherter
-      int i;
+      byte i;
+      int karpos;
      for(i = 0; i <= mfrc522.uid.size; i++) {
         if (mfrc522.uid.uidByte[i] != unsereUID[i]){
-            //led
-            digitalWrite(ledrotPin, HIGH);    
-           // digitalWrite(ledgruenPin, LOW); 
+           karpos =0;
+            Serial.print("\n Gelesenes Byte:" );
+           Serial.print(mfrc522.uid.uidByte[i] );
+           Serial.print("\n gespeichertes Byte:"); 
+           Serial.print(unsereUID[i] );
           }
           //so geht das nicht. größe abfragen und so
           else{
-            digitalWrite(ledgruenPin, HIGH);
-             //digitalWrite(ledrotPin, LOW);   
+              karpos++;
             }
        }
+    
+       
+
+       if (karpos == mfrc522.uid.size){
+       setLocked(true);
+       }
+       else{
+        setLocked(false);
+        }
   }
       
     
@@ -102,3 +128,17 @@ void loop(){
     mfrc522.PICC_HaltA();
     delay(1000);
   }
+
+
+  void setLocked(int locked){
+    if(locked){
+            digitalWrite(ledrotPin, LOW);    
+            digitalWrite(ledgruenPin, HIGH); 
+    }
+    else{
+            digitalWrite(ledrotPin, HIGH);    
+            digitalWrite(ledgruenPin, LOW); 
+    }
+  }
+
+  
